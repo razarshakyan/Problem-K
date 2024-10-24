@@ -1,0 +1,3 @@
+/home/razmik_arshakyan/Desktop/main/sd/Problem-K/build/CMakeFiles/spreadsheet.dir
+/home/razmik_arshakyan/Desktop/main/sd/Problem-K/build/CMakeFiles/edit_cache.dir
+/home/razmik_arshakyan/Desktop/main/sd/Problem-K/build/CMakeFiles/rebuild_cache.dir
