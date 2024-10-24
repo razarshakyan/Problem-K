@@ -4,42 +4,39 @@
 #include <iomanip>
 
 int main() {
-  std::string input;
-  std::getline(std::cin, input);
+  std::string input = 
+    "4 3\n"
+    "12 =C2 3 'Sample\n"
+    "=A1+B1*C1/5 =A2*B1 =B3-C3 'Spread\n"
+    "'Test =4-3 5 'Sheet\n";
 
   Parser parser(input);
-  parser.parse();
 
   int rows = parser.get_height();
   int cols = parser.get_width();
 
   Spreadsheet spreadsheet(rows, cols);
+  parser.parse(spreadsheet);
 
-  for (auto& row : parser.get_rows()) {
-    for (size_t i = 1; i < row.cells.size(); ++i) {
-      spreadsheet.set_value(i - 1, i - 1, row.cells[i]);
-    }
-  }
+  std::cout << "rows: " << rows << " cols: " << cols << std::endl;
 
-  // EVAL EXPR
-  for (int row = 0; row < rows; ++row) {
-    for (int col = 0; col < cols; ++col) {
-      if (spreadsheet.evaluate_cell(row, col) == 0) { // EXPR
-        spreadsheet.evaluate_cell(row, col);
-      }
-    }
-  }
 
-  // PRINT RESULTS
-  std::cout << std::fixed << std::setprecision(0);
-  for (auto& row : parser.get_rows()) {
-    for (size_t i = 0; i < row.cells.size(); ++i) {
-      int value = spreadsheet.evaluate_cell(i, i);
-      std::cout << std::setw(10) << (value == 0 ? "#" : std::to_string(value)) << " ";
-    }
-    std::cout << "\n";
-  }
+  spreadsheet.print();
+  // Evaluate and print results
+  // In your main function
+  // std::cout << rows << cols << std::endl;
+  // for (int row = 0; row < rows; ++row) {
+  //     std::cout << row << std::endl;
+  //     for (int col = 0; col < cols; ++col) {
+  //         try {
+  //             std::string value = spreadsheet.evaluate_cell(row, col);
+  //             std::cout << std::setw(10) << value << " ";
+  //         } catch (const std::exception& e) {
+  //             std::cout << std::setw(10) << "#Error"; // Error placeholder
+  //         }
+  //     }
+  //     std::cout << "\n";
+  // }
 
   return 0;
 }
-

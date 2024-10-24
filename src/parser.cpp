@@ -1,108 +1,135 @@
+#include <unordered_map>
+#include <queue>
 #include "parser.h"
 #include <sstream>
 #include <cctype>
-
-using ReferenceMap = std::unordered_map<char, int>;
-using Graph = std::vector<ReferenceMap>;
+#include <iostream>
 
 Parser::Parser(std::string& input)
-  : height_{ 0 },
-  width_{ 0 } 
+  : height_{0}, width_{0} 
 {
   std::istringstream iss(input);
   std::string line;
 
   std::getline(iss, line);
-  std::istringstream dim(iss.str());
+  std::istringstream dim(line);
   dim >> width_ >> height_;
 
   while (std::getline(iss, line)) {
     RowData row;
     std::istringstream row_stream(line);
-
     std::string cell;
     while (row_stream >> cell) {
       row.cells.push_back(cell);
     }
-
     rows_.push_back(row);
   }
 }
 
-Parser::~Parser() 
-{
+Parser::~Parser() {}
+
+void Parser::parse(Spreadsheet& spreadsheet) {
+  for (int i = 0; i < height_; ++i) {
+    for (size_t j = 0; j < rows_[i].cells.size(); ++j) {
+      spreadsheet.set_value(i, j, rows_[i].cells[j]);
+    }
+  }
 }
 
-void Parser::parse() 
-{ 
-  //TODO 
-}
+int Parser::evaluate_expression(Spreadsheet& spreadsheet, std::string& expr) {
+  std::unordered_map<std::string, std::vector<std::string>> adj_list; // DG
+  std::unordered_map<std::string, int> in_degree; // INDEGREE 
 
-int Parser::evaluate_expression(std::string& expr) {
-  Graph graph;
-  ReferenceMap references;
+  std::istringstream expr_stream(expr);
+  std::string token;
 
-  // BUILDING GRAPH
-  for (char c = 'A'; c <= 'Z'; ++c) {
-    for (int i = 0; i < 26; ++i) {
-      char letter = c;
-      int digit = i;
-      std::string ref = std::string(1, letter) + std::to_string(digit);
-      references[letter] = digit;
-
-      graph.emplace_back();
-      graph.back().insert({ ref, 0 });
+  while (expr_stream >> token) {
+    if (token.size() > 1 && isalpha(token[0]) && isdigit(token[1])) {
+      adj_list[token]; 
+      in_degree[token] = 0; 
     }
   }
 
-  std::size_t pos = 0;
-  while ((pos = expr.find('+'))!= std::string::npos
-      || (pos = expr.find('-'))!= std::string::npos
-      || (pos = expr.find('*'))!= std::string::npos
-      || (pos = expr.find('/'))!= std::string::npos) {
-    std::string left = expr.substr(0, pos);
-    std::string right = expr.substr(pos + 1);
+  // INIT
+  expr_stream.clear();
+  expr_stream.str(expr); 
 
-    for (const auto& pair : references) {
-      graph[pair.second][left] += graph[pair.second][right];
-    }
-    expr = expr.substr(pos + 1);
-  }
-
-  // TOP SORT
-  std::vector<char> order;
-  std::stack<char> stack;
-  for (const auto& row : graph) {
-    for (const auto& col : row) {
-      if (col.second == 0) {
-        stack.push(col.first);
-      }
-    }
-  }
-
-  while (!stack.empty()) {
-    char node = stack.top();
-    stack.pop();
-    order.push_back(node);
-
-    for (const auto& row : graph) {
-      for (const auto& col : row) {
-        if (col.first == node) {
-          --col.second;
-          if (col.second == 0) {
-            stack.push(col.first);
-          }
+  while (expr_stream >> token) {
+    if (isalpha(token[0]) && isdigit(token[1])) {
+      for (const auto& dep : adj_list) {
+        if (token != dep.first && expr.find(dep.first) != std::string::npos) {
+          adj_list[token].push_back(dep.first);
+          in_degree[dep.first]++;
         }
       }
     }
   }
 
+  // INIT QUEUE
+  std::queue<std::string> q;
+  for (const auto& entry : in_degree) {
+    if (entry.second == 0) {
+      q.push(entry.first);
+    }
+  }
+
+  std::unordered_map<std::string, std::string> evaluated_values;
+
+  // KAHNS ALGO
+  while (!q.empty()) {
+    std::string current = q.front();
+    q.pop();
+
+    try {
+      std::string value = spreadsheet.evaluate_cell(current[0] - 'A', current[1] - '1'); 
+      evaluated_values[current] = value; 
+    } catch (const std::runtime_error& e) {
+      std::cerr << "Error evaluating " << current << ": " << e.what() << std::endl;
+      return 0; 
+    }
+
+    
+    for (const auto& neighbor : adj_list[current]) {
+      in_degree[neighbor]--;
+      if (in_degree[neighbor] == 0) {
+        q.push(neighbor);
+      }
+    }
+  }
+
+  for (const auto& entry : in_degree) {
+    if (entry.second > 0) {
+      throw std::runtime_error("Cyclic dependency detected");
+    }
+  }
+
+  
+  std::string result_expr = expr;
+  for (const auto& pair : evaluated_values) {
+    std::string cell_ref = pair.first;
+    std::string cell_value = pair.second;
+    
+    size_t pos;
+    while ((pos = result_expr.find(cell_ref)) != std::string::npos) {
+      result_expr.replace(pos, cell_ref.length(), cell_value);
+    }
+  }
+
   double result = 0.0;
-  for (char c : order) {
-    std::string ref = std::string(1, c) + "0";
-    result += graph.at(c)[ref];
+  std::istringstream final_stream(result_expr);
+  double current_number;
+  char op = '+'; // Start with addition
+
+  while (final_stream >> current_number) {
+    if (op == '+') result += current_number;
+    else if (op == '-') result -= current_number;
+    else if (op == '*') result *= current_number;
+    else if (op == '/') result /= current_number;
+
+    final_stream >> op; // Read the next operator
   }
 
   return static_cast<int>(result);
 }
+
 

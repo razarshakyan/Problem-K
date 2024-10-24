@@ -4,24 +4,25 @@
 #include <string>
 #include <stdexcept>
 
+// FD
+class Spreadsheet; 
+
 class Cell {
-public:
-  enum class Type { Empty, Integer, Text, Expression };
+  public:
+    enum class Type { Empty, Integer, Text, Expression };
 
-  Cell();
-  ~Cell();
+    Cell() : type_{ Type::Empty }, integer_{ 0 }, expression_{ "" } {}
+    ~Cell() {}
 
-  void set_value(std::string& value);
-  int evaluate();
+    void set_value(const std::string& value);
+    std::string evaluate(Spreadsheet& spreadsheet);
 
-private:
-  Type type_;
-  union {
-    int integer_;
-    double expression_result_;
-    std::string text_;
-  };
-  std::string expression_;
+  private:
+    Type type_;
+    int integer_;           
+    std::string text_;      
+    std::string expression_;
 };
+
 
 #endif

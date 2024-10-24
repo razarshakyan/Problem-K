@@ -1,5 +1,5 @@
-#ifndef SPREADHSEET_H
-#define SPREADHSEET_H
+#ifndef SPREADSHEET_H
+#define SPREADSHEET_H
 
 #include <vector>
 #include <string>
@@ -7,22 +7,21 @@
 #include "cell.h"
 
 class Spreadsheet {
-public:
-  Spreadsheet(int rows, int cols);
-  ~Spreadsheet();
+  public:
+    Spreadsheet(int rows, int cols);
+    ~Spreadsheet();
 
-  void set_value(int row, int col, std::string& value);
-  int evaluate_cell(int row, int col);
+    void set_value(int row, int col, const std::string& value); 
+    std::string evaluate_cell(int row, int col);
+    void print();
 
-  //static int evaluate_expression(const std::string& expr);
+  private:
+    struct CellReference {
+      char letter;
+      int digit;
+    };
 
-private:
-  struct CellReference {
-    char letter;
-    int digit;
-  };
-
-  std::vector<std::vector<Cell>> cells_;
+    std::vector<std::vector<Cell>> cells_;
 };
 
 #endif
