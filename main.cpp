@@ -22,8 +22,6 @@ int main() {
 
 
   spreadsheet.print();
-  // Evaluate and print results
-  // In your main function
   // std::cout << rows << cols << std::endl;
   // for (int row = 0; row < rows; ++row) {
   //     std::cout << row << std::endl;
